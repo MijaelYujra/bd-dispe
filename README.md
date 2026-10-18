@@ -23,7 +23,7 @@ docker exec -it postgres_db psql -U postgres -d bd_dispe -c "SELECT * FROM carre
 Usa estos datos exactos en el archivo de configuración (`.env` o equivalente) de tu backend:
 
 - **Host:** `localhost`
-- **Puerto:** `5432`
+- **Puerto:** `5433`
 - **Usuario (User):** `postgres`
 - **Contraseña (Password):** `123456`
 - **Base de Datos (Database):** `bd_dispe`
