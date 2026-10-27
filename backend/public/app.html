@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#102a43">
+  <title>DISPE | Gestión de datos</title>
+  <link rel="stylesheet" href="app.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">D</span>
+      <div>
+        <p class="eyebrow">Sistema de admisión</p>
+        <h1>DISPE <span>· PostgreSQL</span></h1>
+      </div>
+    </div>
+    <a class="api-link" href="./api" target="_blank" rel="noreferrer">Ver API <span aria-hidden="true">↗</span></a>
+  </header>
+
+  <main class="shell">
+    <section class="intro">
+      <div>
+        <p class="eyebrow">Administración</p>
+        <h2>Gestión de datos</h2>
+        <p>Consulta, registra y edita la información del sistema desde formularios. Las validaciones de la base de datos se aplican al guardar.</p>
+      </div>
+      <div class="connection-card">
+        <label for="api-base">Dirección de la API</label>
+        <div class="connection-fields">
+          <input id="api-base" type="text" value="/api" aria-label="Dirección base de la API" inputmode="url">
+          <input id="api-key" type="password" placeholder="API key (opcional)" aria-label="API key opcional" autocomplete="off">
+          <button id="load-data" class="button button-dark" type="button">Conectar</button>
+        </div>
+        <p id="connection-status" class="hint" role="status">Conectando con la API…</p>
+      </div>
+    </section>
+
+    <nav class="tabs" aria-label="Secciones">
+      <button class="tab active" type="button" data-panel="records">Datos</button>
+      <button class="tab" type="button" data-panel="sql-console">Consola SQL</button>
+    </nav>
+
+    <section id="panel-records" class="panel" aria-labelledby="heading-records">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Crear · consultar · editar</p>
+          <h3 id="heading-records">Registros del sistema</h3>
+          <p class="section-description">Selecciona una entidad para ver sus registros o abrir el formulario de creación.</p>
+        </div>
+        <button id="new-record" class="button button-primary" type="button">Nuevo registro</button>
+      </div>
+      <div class="record-toolbar">
+        <div>
+          <label for="resource-select">Entidad</label>
+          <select id="resource-select"></select>
+        </div>
+        <form id="search-form">
+          <label for="search-query">Buscar</label>
+          <div class="search-fields">
+            <input id="search-query" type="search" placeholder="Nombre, documento u otro dato">
+            <button class="button button-secondary" type="submit">Buscar</button>
+          </div>
+        </form>
+      </div>
+      <div id="records-message" class="output" aria-live="polite"></div>
+      <div id="records-table" class="output" aria-live="polite"></div>
+      <div class="pagination">
+        <button id="previous-page" class="button button-secondary" type="button">Anterior</button>
+        <span id="page-status" class="hint" aria-live="polite"></span>
+        <button id="next-page" class="button button-secondary" type="button">Siguiente</button>
+      </div>
+    </section>
+
+    <section id="panel-sql-console" class="panel" aria-labelledby="heading-sql-console" hidden>
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Editor SQL · PostgreSQL</p>
+          <h3 id="heading-sql-console">Consola de programación</h3>
+          <p class="section-description">Escribe una sentencia por ejecución para crear rutinas y triggers, consultar datos o recorrer un cursor.</p>
+        </div>
+      </div>
+      <div class="notice">
+        <strong>Acceso protegido:</strong> configura <code>SQL_CONSOLE_KEY</code> en el archivo <code>.env</code> y recrea el backend con <code>docker compose up -d --force-recreate backend</code>. Esta consola ejecuta cambios reales en la base y solo acepta DDL de funciones, procedimientos y triggers, consultas SELECT, llamadas CALL o una consulta SELECT recorrida con cursor. Un procedimiento invocado con CALL puede modificar datos.
+      </div>
+      <article class="card cursor-example">
+        <h4>Ejemplo: cursores anidados</h4>
+        <p>Recorre las convocatorias con un cursor externo y, para cada una, abre otro cursor para recorrer sus inscripciones. Carga y ejecuta primero la función; después carga la consulta para ver sus resultados.</p>
+        <div class="sql-actions">
+          <button id="load-nested-cursor-ddl" class="button button-secondary" type="button">Cargar creación del ejemplo</button>
+          <button id="load-nested-cursor-query" class="button button-secondary" type="button">Cargar consulta del ejemplo</button>
+        </div>
+        <p id="nested-cursor-status" class="hint" role="status">El ejemplo solo consulta datos de convocatorias e inscripciones.</p>
+      </article>
+      <article class="card sql-card">
+        <form id="sql-console-form" class="form-stack">
+          <div class="sql-toolbar">
+            <div>
+              <label for="sql-mode">Tipo de ejecución</label>
+              <select id="sql-mode" required>
+                <option value="ddl">Crear función, procedimiento o trigger (DDL)</option>
+                <option value="select">Consultar con SELECT</option>
+                <option value="call">Ejecutar procedimiento con CALL</option>
+                <option value="cursor">Recorrer SELECT con cursor</option>
+              </select>
+            </div>
+            <div>
+              <label for="sql-console-key">Clave de consola</label>
+              <input id="sql-console-key" type="password" placeholder="SQL_CONSOLE_KEY" autocomplete="off" required>
+            </div>
+          </div>
+          <label for="sql-input">Sentencia SQL</label>
+          <textarea id="sql-input" spellcheck="false" autocapitalize="off" autocomplete="off" required placeholder="CREATE OR REPLACE FUNCTION fn_ejemplo()
+RETURNS TEXT
+LANGUAGE sql
+AS $$
+  SELECT 'Hola desde PostgreSQL';
+$$;"></textarea>
+          <p id="sql-mode-help" class="hint">DDL permitido: CREATE FUNCTION, CREATE PROCEDURE o CREATE TRIGGER. Envía una sola sentencia; los puntos y coma dentro de bloques $$…$$ son válidos.</p>
+          <div class="sql-actions">
+            <button class="button button-primary" type="submit">Ejecutar sentencia</button>
+            <button id="clear-sql" class="button button-secondary" type="button">Limpiar</button>
+          </div>
+        </form>
+      </article>
+      <div id="sql-console-output" class="output" aria-live="polite"></div>
+    </section>
+
+    <footer class="footer">
+      <span>Interfaz de gestión · PHP + PostgreSQL</span>
+    </footer>
+  </main>
+
+  <dialog id="record-dialog" class="record-dialog" aria-labelledby="form-title">
+    <form id="record-form" method="dialog" novalidate>
+      <div class="dialog-heading">
+        <div>
+          <p id="form-eyebrow" class="eyebrow">Nuevo registro</p>
+          <h3 id="form-title">Crear registro</h3>
+        </div>
+        <button id="close-dialog" class="icon-button" type="button" aria-label="Cerrar formulario">×</button>
+      </div>
+      <div id="record-fields" class="fields-grid"></div>
+      <p id="form-message" class="form-message" role="status"></p>
+      <div class="dialog-actions">
+        <button id="cancel-form" class="button button-secondary" type="button">Cancelar</button>
+        <button id="save-record" class="button button-primary" type="submit">Guardar registro</button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>

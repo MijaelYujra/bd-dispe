@@ -1,0 +1,5 @@
+# Actualización local sin descargar otra vez PHP. Requiere haber construido
+# previamente la imagen normal mediante docker compose up -d --build.
+FROM dispe-integrado-backend:latest
+WORKDIR /var/www/html
+COPY . .
