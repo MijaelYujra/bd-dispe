@@ -572,6 +572,54 @@ BEGIN
 END;
 $$;`;
   const nestedCursorQuery = 'SELECT * FROM fn_demo_cursores_anidados();';
+  const functionExampleDdl = `CREATE OR REPLACE FUNCTION public.fn_demo_total_inscripciones(p_convocatoria INTEGER)
+RETURNS BIGINT
+LANGUAGE sql
+STABLE
+AS $$
+  SELECT count(*)
+  FROM public.inscripcion
+  WHERE idconvocatoria = p_convocatoria;
+$$;`;
+  const functionExampleQuery = 'SELECT public.fn_demo_total_inscripciones(1) AS total_inscripciones;';
+  const procedureExampleDdl = `CREATE OR REPLACE PROCEDURE public.sp_demo_ampliar_fecha_convocatoria(
+  p_id_convocatoria INTEGER,
+  p_dias INTEGER
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF p_dias IS NULL OR p_dias <= 0 THEN
+    RAISE EXCEPTION 'La cantidad de días debe ser mayor que cero.';
+  END IF;
+
+  UPDATE public.convocatoria
+  SET fecha_fin = fecha_fin + p_dias
+  WHERE idconvocatoria = p_id_convocatoria;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'No existe la convocatoria %.', p_id_convocatoria;
+  END IF;
+END;
+$$;`;
+  const procedureExampleCall = 'CALL public.sp_demo_ampliar_fecha_convocatoria(1, 7);';
+  const triggerFunctionExampleDdl = `CREATE OR REPLACE FUNCTION public.fn_demo_validar_nombre_persona()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF NEW.nombre IS NULL OR btrim(NEW.nombre) = '' THEN
+    RAISE EXCEPTION 'El nombre de la persona no puede estar vacío.';
+  END IF;
+
+  NEW.nombre := btrim(NEW.nombre);
+  RETURN NEW;
+END;
+$$;`;
+  const triggerExampleDdl = `CREATE TRIGGER trg_demo_validar_nombre_persona
+BEFORE INSERT OR UPDATE OF nombre ON public.persona
+FOR EACH ROW
+EXECUTE FUNCTION public.fn_demo_validar_nombre_persona();`;
 
   $('#sql-mode').addEventListener('change', (event) => {
     $('#sql-mode-help').textContent = sqlModeHelp[event.target.value];
@@ -596,6 +644,48 @@ $$;`;
     $('#sql-mode').dispatchEvent(new Event('change'));
     $('#sql-input').value = nestedCursorQuery;
     $('#nested-cursor-status').textContent = 'Consulta cargada. Primero debes haber creado fn_demo_cursores_anidados().';
+  });
+
+  $('#load-function-ddl').addEventListener('click', () => {
+    $('#sql-mode').value = 'ddl';
+    $('#sql-mode').dispatchEvent(new Event('change'));
+    $('#sql-input').value = functionExampleDdl;
+    $('#function-example-status').textContent = 'Creación cargada. Ejecuta la sentencia y luego carga la consulta.';
+  });
+
+  $('#load-function-query').addEventListener('click', () => {
+    $('#sql-mode').value = 'select';
+    $('#sql-mode').dispatchEvent(new Event('change'));
+    $('#sql-input').value = functionExampleQuery;
+    $('#function-example-status').textContent = 'Consulta cargada. Primero debes haber creado fn_demo_total_inscripciones().';
+  });
+
+  $('#load-procedure-ddl').addEventListener('click', () => {
+    $('#sql-mode').value = 'ddl';
+    $('#sql-mode').dispatchEvent(new Event('change'));
+    $('#sql-input').value = procedureExampleDdl;
+    $('#procedure-example-status').textContent = 'Creación cargada. Ejecuta la sentencia y luego carga el CALL.';
+  });
+
+  $('#load-procedure-call').addEventListener('click', () => {
+    $('#sql-mode').value = 'call';
+    $('#sql-mode').dispatchEvent(new Event('change'));
+    $('#sql-input').value = procedureExampleCall;
+    $('#procedure-example-status').textContent = 'Llamada cargada: suma 7 días a la convocatoria 1. Verifica el ID antes de ejecutarla.';
+  });
+
+  $('#load-trigger-function-ddl').addEventListener('click', () => {
+    $('#sql-mode').value = 'ddl';
+    $('#sql-mode').dispatchEvent(new Event('change'));
+    $('#sql-input').value = triggerFunctionExampleDdl;
+    $('#trigger-example-status').textContent = 'Función disparadora cargada. Ejecútala antes de crear el trigger.';
+  });
+
+  $('#load-trigger-ddl').addEventListener('click', () => {
+    $('#sql-mode').value = 'ddl';
+    $('#sql-mode').dispatchEvent(new Event('change'));
+    $('#sql-input').value = triggerExampleDdl;
+    $('#trigger-example-status').textContent = 'Creación cargada. Ejecuta este CREATE TRIGGER una sola vez, después de crear la función disparadora.';
   });
 
   $('#sql-console-form').addEventListener('submit', async (event) => {
